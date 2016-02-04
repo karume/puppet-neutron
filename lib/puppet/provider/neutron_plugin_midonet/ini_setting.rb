@@ -1,6 +1,6 @@
 Puppet::Type.type(:neutron_plugin_midonet).provide(
   :ini_setting,
-  :parent => Puppet::Type.type(:openstack_config).provider(:ini_setting)
+  :parent => Puppet::Type.type(:ini_setting).provider(:ruby)
 ) do
 
   def file_path

@@ -77,22 +77,12 @@ class neutron::plugins::midonet (
 
   include ::neutron::params
 
-  Neutron_plugin_midonet<||> ~> Service['neutron-server']
-
   ensure_resource('file', '/etc/neutron/plugins/midonet', {
     ensure => directory,
     owner  => 'root',
     group  => 'neutron',
     mode   => '0640'}
   )
-
-  # Ensure the neutron package is installed before config is set
-  # under both RHEL and Ubuntu
-  if ($::neutron::params::server_package) {
-    Package['neutron-server'] -> Neutron_plugin_midonet<||>
-  } else {
-    Package['neutron'] -> Neutron_plugin_midonet<||>
-  }
 
   neutron_plugin_midonet {
     'MIDONET/midonet_uri':  value => "http://${midonet_api_ip}:${midonet_api_port}/midonet-api";
@@ -106,8 +96,7 @@ class neutron::plugins::midonet (
       path    => '/etc/default/neutron-server',
       match   => '^NEUTRON_PLUGIN_CONFIG=(.*)$',
       line    => "NEUTRON_PLUGIN_CONFIG=${::neutron::params::midonet_config_file}",
-      require => [ Package['neutron-server'], Package[$::neutron::params::midonet_server_package] ],
-      notify  => Service['neutron-server'],
+      require => Package[$::neutron::params::midonet_server_package],
     }
   }
 
@@ -131,7 +120,6 @@ class neutron::plugins::midonet (
     exec { 'midonet-db-sync':
       command     => 'midonet-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugin.ini upgrade head',
       path        => '/usr/bin',
-      before      => Service['neutron-server'],
       subscribe   => Neutron_config['database/connection'],
       refreshonly => true
     }
